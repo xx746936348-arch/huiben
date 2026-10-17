@@ -1,0 +1,16 @@
+{
+  "name": "回本打卡簿",
+  "short_name": "回本打卡",
+  "description": "记录买的东西，每用一次打卡，看它多久回本",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fbf4f8",
+  "theme_color": "#fbf4f8",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
