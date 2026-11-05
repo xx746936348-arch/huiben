@@ -26,6 +26,7 @@
   --c-week:#7a5fd3;  --c-week-s:#ece5ff;
   --c-month:#b98010; --c-month-s:#fff0c4;
   --c-none:#3487c9;  --c-none-s:#dcefff;
+  --c-time:#5f8f12;  --c-time-s:#e8f5cf;
   --good:#2c9c78; --bad:#e04867; --bad-s:#ffe3ea;
   --shadow:0 2px 0 rgba(59,42,68,.05),0 10px 24px -14px rgba(59,42,68,.35);
   --f-display:"ZCOOL KuaiLe","Noto Sans SC",system-ui,sans-serif;
@@ -42,6 +43,7 @@
   --c-week:#ae98ff;  --c-week-s:#302a4f;
   --c-month:#f2c45a; --c-month-s:#40341b;
   --c-none:#7cc0f5;  --c-none-s:#1f3348;
+  --c-time:#b2dc5c;  --c-time-s:#2e3a1a;
   --good:#5fd3a8; --bad:#ff7a93; --bad-s:#4a2330;
   --shadow:0 2px 0 rgba(0,0,0,.3),0 10px 26px -14px rgba(0,0,0,.8); color-scheme:dark}}
 :root[data-theme="dark"]{
@@ -53,11 +55,13 @@
   --c-week:#ae98ff;  --c-week-s:#302a4f;
   --c-month:#f2c45a; --c-month-s:#40341b;
   --c-none:#7cc0f5;  --c-none-s:#1f3348;
+  --c-time:#b2dc5c;  --c-time-s:#2e3a1a;
   --good:#5fd3a8; --bad:#ff7a93; --bad-s:#4a2330;
   --shadow:0 2px 0 rgba(0,0,0,.3),0 10px 26px -14px rgba(0,0,0,.8); color-scheme:dark}
 .k-free{--k:var(--c-free);--ks:var(--c-free-s)} .k-ffree{--k:var(--c-ffree);--ks:var(--c-ffree-s)}
 .k-day{--k:var(--c-day);--ks:var(--c-day-s)} .k-week{--k:var(--c-week);--ks:var(--c-week-s)}
 .k-month{--k:var(--c-month);--ks:var(--c-month-s)} .k-none{--k:var(--c-none);--ks:var(--c-none-s)}
+.k-time{--k:var(--c-time);--ks:var(--c-time-s)}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;-webkit-tap-highlight-color:transparent;
@@ -104,6 +108,13 @@ select.cur{border:1.5px solid var(--line);background:var(--paper);border-radius:
 .trow .t span{font-size:12px;color:var(--muted)}
 .trow .go{border:0;border-radius:999px;background:var(--k);color:var(--paper);padding:6px 14px;font-weight:700;flex:none}
 
+.pages{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--paper);border-radius:999px;padding:5px;box-shadow:var(--shadow)}
+.pg{border:0;border-radius:999px;padding:10px 8px;background:transparent;font-family:var(--f-display);font-size:18px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;position:relative}
+.pg small{font-family:var(--f-num);font-size:13px}
+.pg[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.pg .ping{position:absolute;top:6px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--paper)}
+.stopbox{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.stopbox input{border:1.5px solid var(--line);border-radius:10px;padding:5px 8px;background:var(--paper);font-size:16px}
 .filters{display:flex;gap:6px;flex-wrap:wrap}
 .flt{border:1.5px solid var(--line);background:var(--paper);border-radius:999px;padding:5px 12px;font-size:13.5px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
 .flt i{width:9px;height:9px;border-radius:50%;background:var(--k,var(--muted))}
@@ -288,6 +299,7 @@ label.fld input,label.fld textarea,.dlg textarea{border:1.5px solid var(--line);
       <button class="btn pink" id="addBtn">＋ 记一件</button>
     </div>
   </header>
+  <nav class="pages" id="pages" aria-label="切换页面"></nav>
   <div id="banner" class="banner" hidden></div>
   <section id="todo" class="todo" hidden></section>
   <section class="summary" id="summary"></section>
@@ -313,10 +325,11 @@ label.fld input,label.fld textarea,.dlg textarea{border:1.5px solid var(--line);
 <dialog id="formDlg">
   <form class="f dlg" id="itemForm" method="dialog">
     <div class="dhead"><h3 id="formTitle">记一件新东西</h3><button type="button" class="x" data-close aria-label="关闭">×</button></div>
+    <label class="chk" style="font-size:14px;color:var(--ink)"><input type="checkbox" id="f-gift"> 这是别人送的</label>
     <label class="fld">名称<input id="f-name" required maxlength="60" placeholder="比如：降噪耳机"></label>
     <div class="row2">
-      <label class="fld">总价<input id="f-price" type="number" inputmode="decimal" min="0" step="0.01" required placeholder="0.00"></label>
-      <label class="fld">购买日期（选填）<input id="f-date" type="date"></label>
+      <label class="fld"><span id="lblPrice">总价</span><input id="f-price" type="number" inputmode="decimal" min="0" step="0.01" required placeholder="0.00"></label>
+      <label class="fld"><span id="lblDate">购买日期（选填）</span><input id="f-date" type="date"></label>
     </div>
 
     <label class="fld">到期日 / 保质期到哪天（选填）<input id="f-exp" type="date"></label>
@@ -324,9 +337,11 @@ label.fld input,label.fld textarea,.dlg textarea{border:1.5px solid var(--line);
       <div class="opts big">
         <label class="opt"><input type="radio" name="need" value="free" checked><span><b>不用定期</b><em>想用就用，用一次打一次（或不打）</em></span></label>
         <label class="opt"><input type="radio" name="need" value="sched"><span><b>要定期打卡</b><em>每天 / 每周几 / 每月几次，到时间提醒你</em></span></label>
+        <label class="opt"><input type="radio" name="need" value="time"><span><b>不打卡 · 按天计时</b><em>手机、电脑这类：从买的那天起自动算每天多少钱，不用了再点截止</em></span></label>
       </div>
+      <p class="hint" id="timeHint" hidden>按天计时会从购买日期开始算，没填购买日期就从今天开始算。</p>
     </div>
-    <div class="q"><div class="legend">② 怎么算回本？</div>
+    <div class="q" id="qC"><div class="legend">② 怎么算回本？</div>
       <div class="opts big">
         <label class="opt"><input type="radio" name="cost" value="use" checked><span><b>按次均摊</b><em>不会用完：衣服、包、电器…</em></span></label>
         <label class="opt"><input type="radio" name="cost" value="finish"><span><b>用完即止</b><em>会用完：护肤、洗护、零食…</em></span></label>
@@ -356,11 +371,15 @@ label.fld input,label.fld textarea,.dlg textarea{border:1.5px solid var(--line);
     </div>
     <div class="kindprev" id="kindPrev"></div>
 
-    <div>
+    <div id="giverWrap" hidden>
+      <label class="fld">谁送的（选填）<input id="f-giver" maxlength="40" placeholder="比如：妈妈、闺蜜"></label>
+      <div class="quick" id="giverChips"></div>
+    </div>
+    <div id="placeWrap">
       <label class="fld">在哪买的<input id="f-place" maxlength="40" placeholder="点下面选，或自己填"></label>
       <div class="quick" id="placeChips"></div>
     </div>
-    <div>
+    <div id="srcWrap">
       <div class="fldlbl">在哪看到推荐的</div>
       <div class="quick" id="srcPlat"></div>
       <div id="srcNameWrap" class="subbox" hidden>
@@ -387,16 +406,16 @@ label.fld input,label.fld textarea,.dlg textarea{border:1.5px solid var(--line);
 
 <script>
 (function(){
-const KIND={free:"按次 · 随用随打",ffree:"用完 · 随用随打",day:"每天打卡",week:"每周打卡",month:"每月打卡",none:"用完 · 不打卡"};
-const COST={use:"按次均摊",finish:"用完即止"};
+const KIND={free:"按次 · 随用随打",ffree:"用完 · 随用随打",day:"每天打卡",week:"每周打卡",month:"每月打卡",none:"用完 · 不打卡",time:"按天计时"};
+const COST={use:"按次均摊",finish:"用完即止",time:"按天均摊"};
 const RATES={no:"不推荐",meh:"一般不会再买",ok:"可以考虑",must:"一定要买"};
 const WD=["一","二","三","四","五","六","日"];
 const MILES=[1,0.5,0.1];
 const PLACE_PRESET=["抖音","小红书","淘宝","亚马逊"];
 const SRC_PLATS=["小红书","抖音","B站","朋友推荐","自己填"];
 const NAMED={"小红书":"小红书博主名字","抖音":"抖音博主名字","B站":"B站 UP 主名字","朋友推荐":"哪个朋友","自己填":"来源（比如：自己发现、杂志、直播间）"};
-const LS_OLD="huiben.items.v1", LS_PREFS="huiben.prefs";
-const S={prefs:{fav:{}},srcPlat:"",favManage:false,raw:[],items:[],filter:"all",cur:"¥",openId:null,editId:null,ready:false,img:null,imgCleared:false,panel:null,arcDel:null,drafts:{},pendingImport:null,exConfirm:false};
+const LS_OLD="huiben.items.v1", LS_PREFS="huiben.prefs", LS_PAGE="huiben.page";
+const S={page:"mine",stopDate:"",prefs:{fav:{}},srcPlat:"",favManage:false,raw:[],items:[],filter:"all",cur:"¥",openId:null,editId:null,ready:false,img:null,imgCleared:false,panel:null,arcDel:null,drafts:{},pendingImport:null,exConfirm:false};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)).replace(/-/g,"").slice(0,16);
@@ -415,6 +434,7 @@ const fmtShort=t=>{const d=new Date(t);return d.getFullYear()+"/"+(d.getMonth()+
 const fmtFull=t=>{const d=new Date(t);return fmtShort(t)+" "+pad(d.getHours())+":"+pad(d.getMinutes())};
 
 
+try{if(localStorage.getItem(LS_PAGE)==="gift")S.page="gift"}catch(_){}
 /* ---------- data shape (upgrades records from earlier versions) ---------- */
 function norm(d){
   const it={...d};
@@ -429,7 +449,10 @@ function norm(d){
       if(it.finished&&!it.status)it.status="archived";
     }
   }
+  if(!["use","finish","time"].includes(it.cost))it.cost="use";
   if(!["free","none","day","week","month"].includes(it.sched))it.sched="free";
+  if(it.cost==="time")it.sched="none";
+  it.gift=!!it.gift;
   if(it.cost==="use"&&it.sched==="none")it.sched="free";
   it.weekDays=Array.isArray(it.weekDays)?[...new Set(it.weekDays.map(Number).filter(n=>n>=1&&n<=7))].sort():[];
   it.monthEvery=clamp(parseInt(it.monthEvery)||1,1,12);
@@ -499,13 +522,13 @@ if(!window.claude&&"serviceWorker" in navigator&&location.protocol==="https:"&&!
 }
 
 /* ---------- schedule math ---------- */
-const kindOf=it=>it.sched==="free"?(it.cost==="use"?"free":"ffree"):it.sched;
+const kindOf=it=>it.cost==="time"?"time":it.sched==="free"?(it.cost==="use"?"free":"ffree"):it.sched;
 const tracked=it=>it.sched!=="none";
 const scheduled=it=>it.sched==="day"||it.sched==="week"||it.sched==="month";
 const dayMode=it=>it.sched==="day"||(it.sched==="week"&&it.weekDays.length>0);
 function schedLabel(it){
   switch(it.sched){
-    case"none":return"不打卡";
+    case"none":return it.cost==="time"?"自动计时":"不打卡";
     case"free":return"随用随打";
     case"day":return"每天打卡";
     case"week":return it.weekDays.length?("每周"+it.weekDays.map(d=>WD[d-1]).join("、")):"每周 1 次";
@@ -553,6 +576,16 @@ const needFor=(price,t)=>Math.max(1,Math.ceil(price/t-1e-9));
 function nextMile(it){const c=count(it);for(const t of MILES){const n=needFor(it.price,t);if(c<n)return{t,n,left:n-c}}return null}
 const lossNow=it=>Math.max(0,Math.round((it.price-count(it))*100)/100); // 没到 1元/次 时差的钱 = 亏损
 const daysOwned=(it,end)=>Math.max(1,dayIdx(end||Date.now())-dayIdx(it.boughtAt||it.createdAt||Date.now())+1);
+const endOf=it=>it.status==="archived"?(it.endAt||it.archivedAt):null;
+const tDays=it=>daysOwned(it,endOf(it));
+const lossTime=it=>Math.max(0,Math.round((it.price-tDays(it))*100)/100);
+function dayStrip(it){
+  const d=tDays(it),b=it.boughtAt||it.createdAt||Date.now();let nextSet=false;
+  return`<div class="ms3">${MILES.map(t=>{const n=needFor(it.price,t),hit=d>=n;let cls=hit?"hit":"",em=hit?"✓ 达成":fmtShort(shift(b,n-1));
+    if(!hit&&!nextSet){nextSet=true;cls="nx";em=`还差 ${n-d} 天`}
+    return`<div class="m3 ${cls}"><span>${money2(t)}/天</span><b>${n}天</b><em>${em}</em></div>`}).join("")}</div>`;
+}
+const pageItems=()=>S.items.filter(i=>i.gift===(S.page==="gift"));
 const daysLeft=it=>dayIdx(it.expireAt)-dayIdx(Date.now());
 function expBox(it){
   if(!it.expireAt)return"";const n=daysLeft(it);
@@ -560,27 +593,38 @@ function expBox(it){
   const txt=n<0?`已过期 ${-n} 天`:n===0?"今天到期":`还剩 ${n} 天`;
   return`<div class="exp ${cls}"><span>到期 ${fmtShort(it.expireAt)}</span><b>${txt}</b></div>`;
 }
+const metaBits=(it,pre="")=>it.gift?(it.giver?`<span>${esc(it.giver)}送的</span>`:`<span>别人送的</span>`):
+  `${it.place?`<span>${pre}${esc(it.place)}买</span>`:""}${it.recSource?`<span>${esc(recText(it))}</span>`:""}`;
 const recText=it=>!it.recSource?"":(it.recPlatform==="自己填"||(!it.recPlatform&&!SRC_PLATS.some(p=>p!=="自己填"&&it.recSource.startsWith(p))))?`来源：${it.recSource}`:`${it.recSource} 推荐`;
 const imgSrc=it=>it.imageId?("/_blob/"+it.imageId):(it.imageData||"");
 const glyph=it=>esc((it.name||"?").replace(/^示例·/,"").slice(0,1));
 function outcome(it){
-  if(it.endType==="scrapped")return it.loss>0?`<span class="badge loss">报废 · 亏损 ${money2(it.loss)}</span>`:`<span class="badge okk">报废 · 已回本</span>`;
+  const w=it.cost==="time"?"截止":"报废";
+  if(it.endType==="done")return`<span class="badge okk">完成 · 已回本</span>`;
+  if(it.endType==="scrapped")return it.loss>0?`<span class="badge loss">${w} · 亏损 ${money2(it.loss)}</span>`:`<span class="badge okk">${w} · 已回本</span>`;
   return`<span class="badge fin">用完啦</span>`;
 }
 
 /* ---------- main view ---------- */
+function renderPages(){
+  const due=g=>S.items.some(i=>i.gift===g&&i.status==="active"&&((scheduled(i)&&status(i).due)||(i.expireAt&&daysLeft(i)<=7)));
+  const n=g=>S.items.filter(i=>i.gift===g&&i.status==="active").length;
+  $("#pages").innerHTML=[["mine","我买的",false],["gift","别人送的",true]].map(([k,t,g])=>
+    `<button class="pg" data-page="${k}" aria-pressed="${S.page===k}">${t} <small>${n(g)}</small>${S.page!==k&&due(g)?'<span class="ping" title="有待处理的提醒"></span>':""}</button>`).join("");
+}
 function render(){
-  const all=S.items,active=all.filter(i=>i.status==="active"),arc=all.filter(i=>i.status==="archived");
+  renderPages();
+  const all=pageItems(),active=all.filter(i=>i.status==="active"),arc=all.filter(i=>i.status==="archived");
   const spent=all.reduce((a,b)=>a+b.price,0),total=all.reduce((a,b)=>a+count(b),0);
   const loss=arc.reduce((a,b)=>a+(b.endType==="scrapped"?(Number(b.loss)||0):0),0);
-  $("#summary").innerHTML=`<div><b>${active.length}</b><span>使用中</span></div><div><b>${money(spent)}</b><span>总花费</span></div><div><b>${total}</b><span>累计打卡</span></div><div><b class="${loss>0?"loss":""}">${money(loss)}</b><span>报废亏损</span></div>`;
+  $("#summary").innerHTML=`<div><b>${active.length}</b><span>使用中</span></div><div><b>${money(spent)}</b><span>${S.page==="gift"?"总价值":"总花费"}</span></div><div><b>${total}</b><span>累计打卡</span></div><div><b class="${loss>0?"loss":""}">${money(loss)}</b><span>报废亏损</span></div>`;
   renderTodo(active);
-  const kinds=["free","ffree","day","week","month","none"].filter(k=>active.some(i=>kindOf(i)===k));
+  const kinds=["free","ffree","day","week","month","none","time"].filter(k=>active.some(i=>kindOf(i)===k));
   if(S.filter!=="all"&&S.filter!=="arc"&&!kinds.includes(S.filter))S.filter="all";
   $("#filters").innerHTML=`<button class="flt" data-f="all" aria-pressed="${S.filter==="all"}">全部 ${active.length}</button>`+
     kinds.map(k=>`<button class="flt k-${k}" data-f="${k}" aria-pressed="${S.filter===k}"><i></i>${KIND[k]}</button>`).join("")+
     `<button class="flt" data-f="arc" aria-pressed="${S.filter==="arc"}">归档 ${arc.length}</button>`;
-  const exN=all.filter(i=>i.example).length;
+  const exN=S.items.filter(i=>i.example).length;
   $("#exbar").hidden=!exN;
   if(exN)$("#exbar").innerHTML=S.exConfirm?`<span>确定删掉 ${exN} 条示例？你自己记的不受影响。</span><span style="display:flex;gap:6px"><button class="btn small" data-exno>取消</button><button class="btn small dangerfill" data-exyes>删掉示例</button></span>`
     :`<span>标着「示例」的是演示数据，看完可以一键清掉。</span><button class="btn small" data-exclear>清除示例</button>`;
@@ -591,6 +635,7 @@ function render(){
     m.innerHTML=list.length?`<div class="arcgrid">${list.map(arcCard).join("")}</div>`:`<div class="grid"><div class="empty"><p>还没有归档的东西。<br>用完或报废的东西会放在这里。</p></div></div>`;
     return;
   }
+  if(!all.length&&S.page==="gift"){m.innerHTML=`<div class="grid"><div class="empty"><h2>还没有别人送的东西</h2><p>收到礼物也可以记下来：谁送的、大概值多少，<br>之后打卡、提醒、归档都和「我买的」一样。</p><div class="actions"><button class="btn pink" data-add>＋ 记一件礼物</button></div></div></div>`;return}
   if(!all.length){m.innerHTML=`<div class="grid"><div class="empty"><h2>还没有记录</h2><p>点「＋ 记一件」，填上价格、拍张照片。<br>之后每用一次打一次卡，看它离「1元一次」还有多远。</p><div class="actions"><button class="btn pink" data-add>＋ 记第一件</button><button class="btn" data-importbtn>导入备份</button></div></div></div>`;return}
   let list=active.slice().sort((a,b)=>{const da=(status(a)||{}).due?1:0,db=(status(b)||{}).due?1:0;return db-da||(b.createdAt||0)-(a.createdAt||0)});
   if(S.filter!=="all")list=list.filter(i=>kindOf(i)===S.filter);
@@ -626,7 +671,7 @@ function card(it){
       <div class="thumb${src?"":" noimg"}">${src?`<img src="${esc(src)}" alt="" loading="lazy">`:`<span class="glyph">${glyph(it)}</span>`}
         <div class="chips">${s&&s.due?`<span class="chip due">${s.day?"今天要打卡":s.pn+"还差"+s.remaining+"次"}</span>`:""}<span class="chip">${tagLabel(it)}</span>${it.example?'<span class="chip ex">示例</span>':""}</div></div>
       <div class="body"><div class="name">${esc(it.name)}</div>
-        <div class="meta"><span class="num">${money(it.price)}</span>${it.place?`<span>${esc(it.place)}买</span>`:""}${it.recSource?`<span>${esc(recText(it))}</span>`:""}${it.rating?`<span class="rate ${it.rating}">${RATES[it.rating]}</span>`:""}</div>${it.status==="active"?expBox(it):""}</div>
+        <div class="meta"><span class="num">${money(it.price)}</span>${metaBits(it)}${it.rating?`<span class="rate ${it.rating}">${RATES[it.rating]}</span>`:""}</div>${it.status==="active"?expBox(it):""}</div>
     </button><div class="perf" aria-hidden="true"></div>`;
   let stub;
   if(tracked(it)){
@@ -642,6 +687,12 @@ function card(it){
       ${milestoneStrip(it)}
       <div class="next">${line}</div><div class="bar"><i style="width:${bar.toFixed(1)}%"></i></div>
       <button class="punch${soft?" soft":""}" data-punch="${esc(it.id)}">${label}</button>`;
+  }else if(it.cost==="time"){
+    const d=tDays(it),n1=needFor(it.price,1),nx=MILES.map(t=>needFor(it.price,t)).find(n=>d<n);
+    stub=`<div class="avgrow"><div class="avg">${money2(it.price/d)}<small>/天</small></div><div class="cntt">已用 <b>${d}</b> 天</div></div>
+      ${dayStrip(it)}
+      <div class="next">${nx?`自动计时中，再过 ${nx-d} 天降到 ${money2(it.price/nx)}/天`:`已经低于 ${money2(0.1)}/天 啦`}</div><div class="bar"><i style="width:${Math.min(100,d/(nx||d)*100).toFixed(1)}%"></i></div>
+      <button class="punch alt" data-stopcard="${esc(it.id)}">${d>=n1?"已回本 · 不用了点这里":"不用了 · 截止"}</button>`;
   }else{
     const d=daysOwned(it);
     stub=`<div class="avgrow"><div class="avg">${money2(it.price/d)}<small>/天</small></div><div class="cntt">已拥有 <b>${d}</b> 天</div></div>
@@ -651,13 +702,13 @@ function card(it){
   return`<article class="card k-${k}" data-id="${esc(it.id)}">${head}<div class="stub">${stub}</div><div class="stampfx" aria-hidden="true">已打卡</div></article>`;
 }
 function arcCard(it){
-  const src=imgSrc(it),c=count(it),d=daysOwned(it,it.archivedAt);
+  const src=imgSrc(it),c=count(it),d=daysOwned(it,it.endAt||it.archivedAt);
   const stat=tracked(it)?`${money(it.price)} · 用了 ${c} 次 · ${c?money2(it.price/c):"—"}/次`:`${money(it.price)} · 用了 ${d} 天 · ${money2(it.price/d)}/天`;
   return`<article class="arc k-${kindOf(it)}"><button class="hit" data-open="${esc(it.id)}" aria-label="查看 ${esc(it.name)}">
     <div class="pic">${src?`<img src="${esc(src)}" alt="" loading="lazy">`:`<span class="glyph">${glyph(it)}</span>`}</div>
     <div class="info"><div class="name" style="font-size:15px">${esc(it.name)}${it.example?' <span class="chip ex">示例</span>':""}</div>${outcome(it)}
       <div class="meta"><span class="num">${stat}</span></div>
-      <div class="meta"><span>${fmtShort(it.boughtAt||it.createdAt)} – ${fmtShort(it.archivedAt||Date.now())}</span>${it.place?`<span>${esc(it.place)}买</span>`:""}${it.recSource?`<span>${esc(recText(it))}</span>`:""}</div>
+      <div class="meta"><span>${fmtShort(it.boughtAt||it.createdAt)} – ${fmtShort(it.endAt||it.archivedAt||Date.now())}</span>${metaBits(it)}</div>
       ${it.rating?`<div class="meta"><span class="rate ${it.rating}">${RATES[it.rating]}</span></div>`:""}
       ${it.review?`<div class="review">${esc(it.review)}</div>`:""}
     </div></button>
@@ -681,6 +732,17 @@ function endPanel(it){
     return`<div class="panel bad"><div>还没到 ${money2(1)}/次。总价 ${money2(it.price)}，要用满 <b>${n1}</b> 次才到 ${money2(1)}/次，现在用了 <b>${c}</b> 次${c?`（${money2(it.price/c)}/次）`:""}。</div>
       <div>现在报废，亏损</div><div class="big">${money2(loss)}</div>
       <div class="actions"><button class="btn small" data-panelno>再用用</button><button class="btn small dangerfill" data-endyes="scrapped">仍然报废</button></div></div>`;
+  }
+  if(p==="stop"){
+    const today=dayKey(Date.now()),b=it.boughtAt||it.createdAt||Date.now(),minD=dayKey(b);
+    const v=S.stopDate&&S.stopDate>=minD&&S.stopDate<=today?S.stopDate:today;
+    const end=new Date(v+"T12:00:00").getTime(),d=daysOwned(it,end),per=it.price/d,loss=Math.max(0,Math.round((it.price-d)*100)/100);
+    const pick=`<div class="stopbox"><label for="stopDate">哪天开始不用的：</label><input type="date" id="stopDate" min="${minD}" max="${today}" value="${v}"></div>`;
+    if(loss<=0)return`<div class="panel good">${pick}<div class="bigok">已经回本啦 ✓</div><div>从 ${fmtShort(b)} 到 ${fmtShort(end)} 一共用了 ${d} 天，均价 ${money2(per)}/天，到 ${money2(1)}/天 以下了。</div>
+      <div class="actions"><button class="btn small" data-panelno>再用用</button><button class="btn small pink" data-endyes="done">完成并归档</button></div></div>`;
+    return`<div class="panel bad">${pick}<div>从 ${fmtShort(b)} 到 ${fmtShort(end)} 一共用了 <b>${d}</b> 天（${money2(per)}/天）。要用满 <b>${needFor(it.price,1)}</b> 天才到 ${money2(1)}/天。</div>
+      <div>现在截止，亏损</div><div class="big">${money2(loss)}</div>
+      <div class="actions"><button class="btn small" data-panelno>再用用</button><button class="btn small dangerfill" data-endyes="scrapped">仍然截止</button></div></div>`;
   }
   if(p==="delete")return`<div class="panel bad"><div>确定删除「${esc(it.name)}」？打卡记录会一起删掉，不能恢复。</div>
     <div class="actions"><button class="btn small" data-panelno>取消</button><button class="btn small dangerfill" data-delyes>删除</button></div></div>`;
@@ -707,6 +769,10 @@ function renderDetail(){
     kv=`<div><b>${money(it.price)}</b><span>总价</span></div><div><b>${c}</b><span>使用次数</span></div><div><b>${a===null?"—":money2(a)}</b><span>每次均价</span></div>`;
     main=`<div class="sec"><h4>回本里程碑</h4>${milestoneStrip(it)}</div>`;
     if(s){main+=`<div class="kv"><div><b>${s.cur}</b><span>当前连续（${s.unit}）</span></div><div><b>${s.best}</b><span>最长连续</span></div><div><b>${s.day?(s.doneToday?"✓":s.dueToday?"待打":"休息"):`${s.have}/${s.target}`}</b><span>${s.day?"今天":s.pn}</span></div></div>${calendar(it,s)}`}
+  }else if(it.cost==="time"){
+    const dd=tDays(it);
+    kv=`<div><b>${money(it.price)}</b><span>${it.gift?"价值":"总价"}</span></div><div><b>${dd}</b><span>${archived?"一共用了几天":"已用天数（自动）"}</span></div><div><b>${money2(it.price/dd)}</b><span>每天均价</span></div>`;
+    main=`<div class="sec"><h4>回本里程碑 · 按天</h4>${dayStrip(it)}</div>`;
   }else{
     const dd=daysOwned(it,archived?it.archivedAt:null);
     kv=`<div><b>${money(it.price)}</b><span>总价</span></div><div><b>${dd}</b><span>${archived?"用了几天":"已拥有天数"}</span></div><div><b>${money2(it.price/dd)}</b><span>折合每天</span></div>`;
@@ -714,8 +780,8 @@ function renderDetail(){
   const r=it.rating||"",draft=S.drafts[it.id]??it.review??"";
   const hist=it.checkins.map((t,i)=>({t,i})).sort((x,y)=>y.t-x.t);
   d.innerHTML=`
-    <div class="dhead"><div><h3>${esc(it.name)}</h3><div class="meta" style="margin-top:4px"><span class="chip" style="background:var(--ks)">${tagLabel(it)}</span>${it.boughtAt?`<span>${fmtDate(it.boughtAt)}买</span>`:""}${it.place?`<span>在${esc(it.place)}买</span>`:""}${it.recSource?`<span>${esc(recText(it))}</span>`:""}</div></div><button class="x" data-close aria-label="关闭">×</button></div>
-    ${archived?`<div>${outcome(it)} <span class="next">${fmtShort(it.archivedAt||Date.now())} 归档</span></div>`:""}
+    <div class="dhead"><div><h3>${esc(it.name)}</h3><div class="meta" style="margin-top:4px"><span class="chip" style="background:var(--ks)">${tagLabel(it)}</span>${it.boughtAt?`<span>${fmtDate(it.boughtAt)}${it.gift?"收到":"买"}</span>`:""}${metaBits(it,"在")}</div></div><button class="x" data-close aria-label="关闭">×</button></div>
+    ${archived?`<div>${outcome(it)} <span class="next">${it.endAt?`${fmtShort(it.endAt)} 截止`:`${fmtShort(it.archivedAt||Date.now())} 归档`}</span></div>`:""}
     ${src?`<div class="dimg"><img src="${esc(src)}" alt=""></div>`:""}
     ${archived?"":expBox(it)}
     <div class="kv">${kv}</div>
@@ -733,14 +799,16 @@ function renderDetail(){
     ${endPanel(it)}
     ${S.panel?"":`<div class="actions">
       <button class="btn small danger" data-panel="delete">删除</button>
-      ${archived?`<button class="btn small" data-restore>恢复为使用中</button>`:`
+      ${archived?`<button class="btn small" data-restore>${it.cost==="time"?"撤回截止":"恢复为使用中"}</button>`:`
         <button class="btn small" data-edit>编辑</button>
         ${tracked(it)?`<button class="btn small" data-panel="scrap">报废</button>`:""}
         ${it.cost==="finish"?`<button class="btn small" data-panel="finish">用完啦</button>`:""}
+        ${it.cost==="time"?`<button class="btn small pink" data-panel="stop">截止使用</button>`:""}
         ${tracked(it)?`<button class="btn small pink" data-punch="${esc(it.id)}">打卡</button>`:""}`}
     </div>`}`;
   if(S.panel){const pn=d.querySelector(".panel");if(pn)requestAnimationFrame(()=>pn.scrollIntoView({block:"nearest",behavior:"smooth"}))}
 }
+document.addEventListener("change",e=>{if(e.target.id==="stopDate"){S.stopDate=e.target.value;renderDetail()}});
 document.addEventListener("input",e=>{if(e.target.id==="d-review")S.drafts[e.target.dataset.id]=e.target.value});
 
 /* ---------- actions ---------- */
@@ -774,6 +842,9 @@ document.addEventListener("click",async e=>{
   if(b.hasAttribute("data-importbtn")){$("#importFile").click();return}
   if(ds.punch){punch(ds.punch);return}
   if(ds.endcard){openDetail(ds.endcard,"finish");return}
+  if(ds.stopcard){S.stopDate="";openDetail(ds.stopcard,"stop");return}
+  if(ds.page){S.page=ds.page;S.filter="all";S.arcDel=null;try{localStorage.setItem(LS_PAGE,S.page)}catch(_){}render();window.scrollTo({top:0});return}
+  if(ds.giver!==undefined){const i=$("#f-giver");i.value=i.value.trim()===ds.giver?"":ds.giver;paintGiver();return}
   if(ds.open){openDetail(ds.open);return}
   if(b.hasAttribute("data-exclear")){S.exConfirm=true;render();return}
   if(b.hasAttribute("data-exno")){S.exConfirm=false;render();return}
@@ -785,7 +856,7 @@ document.addEventListener("click",async e=>{
     try{if(it)await removeItem(it);toast("已删除")}catch(_){toast("删除失败，请再试一次")}return}
   if(b.hasAttribute("data-close")){b.closest("dialog").close();return}
   const it=S.items.find(x=>x.id===S.openId);if(!it)return;
-  if(ds.panel){S.panel=ds.panel;renderDetail();return}
+  if(ds.panel){S.panel=ds.panel;if(ds.panel==="stop")S.stopDate="";renderDetail();return}
   if(b.hasAttribute("data-panelno")){S.panel=null;renderDetail();return}
   if(ds.rate){await save({...it,rating:it.rating===ds.rate?"":ds.rate});return}
   if(b.hasAttribute("data-savereview")){const v=$("#d-review").value.trim();if(await save({...it,review:v},"评价已保存"))delete S.drafts[it.id];return}
@@ -793,11 +864,14 @@ document.addEventListener("click",async e=>{
   if(b.hasAttribute("data-backfill")){const v=$("#backDate").value;if(!v)return;const t=new Date(v+"T12:00:00").getTime();
     if(t>Date.now()){toast("不能补未来的日期");return}await punch(it.id,t);return}
   if(ds.endyes){
-    const loss=ds.endyes==="scrapped"?lossNow(it):0;
-    const ok=await save({...it,status:"archived",endType:ds.endyes,archivedAt:Date.now(),loss},
-      ds.endyes==="finished"?"用完啦，已移到归档":loss>0?`已报废，亏损 ${money2(loss)}，移到归档`:"已报废（已回本），移到归档");
+    let extra={},loss=ds.endyes==="scrapped"?lossNow(it):0,msg;
+    if(it.cost==="time"){const el=$("#stopDate");const end=new Date((el&&el.value||dayKey(Date.now()))+"T12:00:00").getTime();
+      extra.endAt=end;const d=daysOwned(it,end);loss=ds.endyes==="scrapped"?Math.max(0,Math.round((it.price-d)*100)/100):0;
+      msg=ds.endyes==="done"?`完成啦！用了 ${d} 天，已移到归档`:`已截止，亏损 ${money2(loss)}，移到归档`}
+    else msg=ds.endyes==="finished"?"用完啦，已移到归档":loss>0?`已报废，亏损 ${money2(loss)}，移到归档`:"已报废（已回本），移到归档";
+    const ok=await save({...it,...extra,status:"archived",endType:ds.endyes,archivedAt:Date.now(),loss},msg);
     if(ok){S.panel=null;$("#detailDlg").close()}return}
-  if(b.hasAttribute("data-restore")){const o={...it,status:"active"};delete o.endType;delete o.archivedAt;delete o.loss;await save(o,"已恢复为使用中");return}
+  if(b.hasAttribute("data-restore")){const o={...it,status:"active"};delete o.endType;delete o.archivedAt;delete o.loss;delete o.endAt;await save(o,it.cost==="time"?"已撤回截止，继续计时":"已恢复为使用中");return}
   if(b.hasAttribute("data-edit")){$("#detailDlg").close();openForm(it);return}
   if(b.hasAttribute("data-delyes")){try{await removeItem(it);$("#detailDlg").close();toast("已删除")}catch(_){toast("删除失败，请再试一次")}return}
 });
@@ -808,7 +882,8 @@ const form=$("#itemForm");
 const val=n=>{const r=form.querySelector(`input[name="${n}"]:checked`);return r?r.value:""};
 function setRadio(name,v){const r=form.querySelector(`input[name="${name}"][value="${v}"]`);if(r)r.checked=true}
 function formItem(){
-  const need=val("need"),cost=val("cost");let sched,monthEvery=1,monthTimes=1,weekDays=[];
+  const need=val("need");let cost=val("cost"),sched,monthEvery=1,monthTimes=1,weekDays=[];
+  if(need==="time")return{cost:"time",sched:"none",weekDays,monthEvery,monthTimes};
   if(need==="free")sched=cost==="finish"&&val("ftrack")==="none"?"none":"free";
   else{const f=val("freq");
     if(f==="day")sched="day";
@@ -818,13 +893,16 @@ function formItem(){
   return{cost,sched,weekDays,monthEvery,monthTimes};
 }
 function syncForm(){
-  const need=val("need"),cost=val("cost");
+  const need=val("need"),cost=val("cost"),gift=$("#f-gift").checked;
+  $("#qC").hidden=need==="time";$("#timeHint").hidden=need!=="time";
   $("#qF").hidden=!(need==="free"&&cost==="finish");
   $("#qS").hidden=need!=="sched";
+  $("#giverWrap").hidden=!gift;$("#placeWrap").hidden=gift;$("#srcWrap").hidden=gift;
+  $("#lblPrice").textContent=gift?"价值（估个大概）":"总价";$("#lblDate").textContent=gift?"收到日期（选填）":"购买日期（选填）";
   const f=val("freq");$("#wdRow").hidden=f!=="week";$("#mRow").hidden=f!=="month";$("#cRow").hidden=f!=="custom";
   const p=norm(formItem()),k=kindOf(p);
   const kp=$("#kindPrev");kp.className="kindprev k-"+k;
-  kp.innerHTML=`<i></i><span>这件会是 <b>${tagLabel(p)}</b>${scheduled(p)?"，到时间没打卡会提醒你":""}</span>`;
+  kp.innerHTML=`<i></i><span>这件会是 <b>${tagLabel(p)}</b>${scheduled(p)?"，到时间没打卡会提醒你":p.cost==="time"?"，每天自动累计，不用打卡":""}</span>`;
 }
 form.addEventListener("change",syncForm);form.addEventListener("input",e=>{if(["f-mt","f-ce","f-ct"].includes(e.target.id))syncForm()});
 function chipList(preset,field){
@@ -837,7 +915,13 @@ function paintChips(){
   $("#placeChips").innerHTML=chipList(PLACE_PRESET,"place").map(v=>`<button type="button" class="qc" data-fill="#f-place" data-v="${esc(v)}" aria-pressed="${p===v}">${esc(v)}</button>`).join("");
   paintSrc();
 }
-$("#f-place").addEventListener("input",paintChips);$("#f-srcname").addEventListener("input",paintFav);
+$("#f-place").addEventListener("input",paintChips);
+function paintGiver(){
+  const g=$("#f-giver").value.trim(),list=[];
+  S.items.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).forEach(i=>{const v=(i.giver||"").trim();if(v&&!list.includes(v))list.push(v)});
+  $("#giverChips").innerHTML=list.slice(0,8).map(v=>`<button type="button" class="qc" data-giver="${esc(v)}" aria-pressed="${g===v}">${esc(v)}</button>`).join("");
+}
+$("#f-giver").addEventListener("input",paintGiver);$("#f-srcname").addEventListener("input",paintFav);
 /* 推荐来源：先选平台，再填博主；常用博主可以存下来 */
 function paintSrc(){
   const pl=S.srcPlat;
@@ -892,14 +976,16 @@ function openForm(it){
   $("#f-name").value=it?it.name:"";$("#f-price").value=it?it.price:"";
   $("#f-date").value=it&&it.boughtAt?dayKey(it.boughtAt):"";
   $("#f-exp").value=it&&it.expireAt?dayKey(it.expireAt):"";
-  $("#f-place").value=it?it.place||"":"";loadSrc(it);$("#f-note").value=it?it.note||"":"";
+  $("#f-place").value=it?it.place||"":"";loadSrc(it);
+  $("#f-gift").checked=it?!!it.gift:S.page==="gift";$("#f-giver").value=it?it.giver||"":"";$("#f-note").value=it?it.note||"":"";
   if(it){
-    setRadio("cost",it.cost);setRadio("need",scheduled(it)?"sched":"free");setRadio("ftrack",it.sched==="none"?"none":"free");
+    if(it.cost!=="time")setRadio("cost",it.cost);setRadio("need",it.cost==="time"?"time":scheduled(it)?"sched":"free");setRadio("ftrack",it.sched==="none"?"none":"free");
     if(it.sched==="day")setRadio("freq","day");
     else if(it.sched==="week"){setRadio("freq","week");form.querySelectorAll('input[name="wd"]').forEach(x=>x.checked=it.weekDays.includes(+x.value))}
     else if(it.sched==="month"){if(it.monthEvery>1){setRadio("freq","custom");$("#f-ce").value=it.monthEvery;$("#f-ct").value=it.monthTimes}else{setRadio("freq","month");$("#f-mt").value=it.monthTimes}}
   }
-  syncForm();paintChips();setPreview(it?imgSrc(it):"");$("#formDlg").showModal();
+  $("#formTitle").textContent=it?"编辑":(S.page==="gift"?"记一件礼物":"记一件新东西");
+  syncForm();paintChips();paintGiver();setPreview(it?imgSrc(it):"");$("#formDlg").showModal();
 }
 /* 图片压缩：云端长边 ≤1200px、≤450KB；本机 ≤1000px、≤300KB，超了就继续降尺寸和画质 */
 function loadImg(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file);const i=new Image();i.onload=()=>res({img:i,u});i.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("decode"))};i.src=u})}
@@ -937,7 +1023,8 @@ form.addEventListener("submit",async e=>{
   const old=S.items.find(x=>x.id===S.editId);
   const dv=$("#f-date").value,ev=$("#f-exp").value;
   const item={...(old||{}),...formItem(),id:old?old.id:uid(),name,price,
-    place:$("#f-place").value.trim(),...composeSrc(),note:$("#f-note").value.trim(),
+    gift:$("#f-gift").checked,giver:$("#f-gift").checked?$("#f-giver").value.trim():"",
+    place:$("#f-gift").checked?"":$("#f-place").value.trim(),...($("#f-gift").checked?{recPlatform:"",recName:"",recSource:""}:composeSrc()),note:$("#f-note").value.trim(),
     boughtAt:dv?new Date(dv+"T12:00:00").getTime():null,expireAt:ev?new Date(ev+"T12:00:00").getTime():null,checkins:old?old.checkins:[],
     status:old?old.status:"active",createdAt:old?old.createdAt:Date.now()};
   const btn=$("#f-save");btn.disabled=true;btn.textContent="保存中…";
@@ -947,7 +1034,9 @@ form.addEventListener("submit",async e=>{
       else if(S.img.dataUrl){item.imageData=S.img.dataUrl;item.imageId=null}
       else toast("图片暂时存不了，先保存了文字");
     }else if(S.imgCleared){if(old&&old.imageId&&assets)assets.delete(old.imageId).catch(()=>{});item.imageId=null;item.imageData=null}
-    await store.put(item);$("#formDlg").close();toast(old?"已保存修改":"已记下「"+name+"」");
+    await store.put(item);$("#formDlg").close();
+    if(item.gift!==(S.page==="gift")){S.page=item.gift?"gift":"mine";try{localStorage.setItem(LS_PAGE,S.page)}catch(_){}render()}
+    toast(old?"已保存修改":"已记下「"+name+"」");
   }catch(err){toast("保存失败："+(err&&err.message||"请再试一次"))}
   finally{btn.disabled=false;btn.textContent="保存"}
 });
