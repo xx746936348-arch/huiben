@@ -133,6 +133,7 @@ select.cur{border:1.5px solid var(--line);background:var(--paper);border-radius:
 .chips{position:absolute;left:10px;top:10px;right:10px;display:flex;gap:6px;flex-wrap:wrap}
 .chip{font-size:11.5px;padding:2px 9px;border-radius:999px;background:var(--paper);color:var(--k);font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
 .chip.ex{background:var(--c-month);color:var(--paper)}
+.chip.no{background:var(--k);color:var(--paper);min-width:22px;height:22px;padding:0 6px;justify-content:center;font-family:var(--f-num);font-size:13px;box-shadow:0 0 0 2px var(--paper)}
 .chip.due{background:var(--accent);color:var(--accent-ink);animation:wob 1.6s ease-in-out infinite}
 @keyframes wob{0%,100%{transform:rotate(0)}10%{transform:rotate(-4deg)}20%{transform:rotate(4deg)}30%{transform:rotate(0)}}
 .body{padding:12px 16px 8px;display:flex;flex-direction:column;gap:3px;min-width:0}
@@ -355,7 +356,7 @@ label.fld input,label.fld textarea,.dlg textarea{border:1.5px solid var(--line);
     </div>
     <div class="q" id="qS" hidden><div class="legend">③ 多久打一次？</div>
       <div class="opts">
-        <label class="opt"><input type="radio" name="freq" value="day" checked><span>每天</span></label>
+        <label class="opt"><input type="radio" name="freq" value="day" checked><span>每天（可设几次）</span></label>
         <label class="opt"><input type="radio" name="freq" value="week"><span>每周</span></label>
         <label class="opt"><input type="radio" name="freq" value="month"><span>每月</span></label>
         <label class="opt"><input type="radio" name="freq" value="custom"><span>自定义</span></label>
@@ -366,6 +367,7 @@ label.fld input,label.fld textarea,.dlg textarea{border:1.5px solid var(--line);
         </div>
         <p class="hint" style="margin-top:6px">点亮的那几天要打卡，当天没打会提醒。一个都不点 = 每周任意一天打一次。</p>
       </div>
+      <div id="dRow" class="nrow">每天打卡 <input id="f-dt" type="number" min="1" max="20" value="1" inputmode="numeric"> 次</div>
       <div id="mRow" class="nrow" hidden>每月打卡 <input id="f-mt" type="number" min="1" max="31" value="2" inputmode="numeric"> 次</div>
       <div id="cRow" class="nrow" hidden>每 <input id="f-ce" type="number" min="1" max="12" value="2" inputmode="numeric"> 个月打卡 <input id="f-ct" type="number" min="1" max="60" value="1" inputmode="numeric"> 次</div>
     </div>
@@ -455,6 +457,7 @@ function norm(d){
   it.gift=!!it.gift;
   if(it.cost==="use"&&it.sched==="none")it.sched="free";
   it.weekDays=Array.isArray(it.weekDays)?[...new Set(it.weekDays.map(Number).filter(n=>n>=1&&n<=7))].sort():[];
+  it.dayTimes=clamp(parseInt(it.dayTimes)||1,1,20);
   it.monthEvery=clamp(parseInt(it.monthEvery)||1,1,12);
   it.monthTimes=clamp(parseInt(it.monthTimes)||1,1,60);
   if(!it.status)it.status="active";
@@ -530,7 +533,7 @@ function schedLabel(it){
   switch(it.sched){
     case"none":return it.cost==="time"?"自动计时":"不打卡";
     case"free":return"随用随打";
-    case"day":return"每天打卡";
+    case"day":return it.dayTimes>1?`每天 ${it.dayTimes} 次`:"每天打卡";
     case"week":return it.weekDays.length?("每周"+it.weekDays.map(d=>WD[d-1]).join("、")):"每周 1 次";
     case"month":return it.monthEvery>1?`每 ${it.monthEvery} 个月 ${it.monthTimes} 次`:`每月 ${it.monthTimes} 次`;
   }return"";
@@ -551,14 +554,15 @@ function status(it){
   if(!scheduled(it))return null;
   const now=Date.now(),today=dayIdx(now);
   if(dayMode(it)){
-    const days=new Set(it.checkins.map(dayIdx));
+    const cnt=new Map();it.checkins.forEach(t=>{const d=dayIdx(t);cnt.set(d,(cnt.get(d)||0)+1)});
+    const need=it.sched==="day"?it.dayTimes:1,have=cnt.get(today)||0,done=d=>(cnt.get(d)||0)>=need,part=d=>{const c=cnt.get(d)||0;return c>0&&c<need};
     const isS=d=>it.sched==="day"||it.weekDays.includes(wdOf(d));
-    const doneToday=days.has(today),dueToday=isS(today)&&!doneToday;
-    let cur=0;for(let d=today,n=0;n<1000;d--,n++){if(!isS(d))continue;if(days.has(d))cur++;else if(d===today)continue;else break}
-    const start=Math.min(dayIdx(it.boughtAt||it.createdAt||now),...days);
-    let best=0,run=0;for(let d=start;d<=today;d++){if(!isS(d))continue;if(days.has(d)){run++;best=Math.max(best,run)}else if(d!==today)run=0}
-    return{day:true,isS,days,today,doneToday,dueToday,due:dueToday,cur,best,unit:it.sched==="day"?"天":"次",
-      todo:dueToday?(it.sched==="day"?"每天打卡，今天还没打":`今天是周${WD[wdOf(today)-1]}，要打卡`):""};
+    const doneToday=done(today),dueToday=isS(today)&&!doneToday,rem=Math.max(0,need-have);
+    let cur=0;for(let d=today,n=0;n<1000;d--,n++){if(!isS(d))continue;if(done(d))cur++;else if(d===today)continue;else break}
+    const start=Math.min(dayIdx(it.boughtAt||it.createdAt||now),...cnt.keys());
+    let best=0,run=0;for(let d=start;d<=today;d++){if(!isS(d))continue;if(done(d)){run++;best=Math.max(best,run)}else if(d!==today)run=0}
+    return{day:true,isS,done,part,need,have,rem,today,doneToday,dueToday,due:dueToday,cur,best,unit:it.sched==="day"?"天":"次",
+      todo:dueToday?(it.sched==="day"?(need>1?`每天 ${need} 次，今天还差 ${rem} 次`:"每天打卡，今天还没打"):`今天是周${WD[wdOf(today)-1]}，要打卡`):""};
   }
   const target=it.sched==="month"?it.monthTimes:1;
   const counts=new Map();it.checkins.forEach(t=>{const k=periodIdx(it,t);counts.set(k,(counts.get(k)||0)+1)});
@@ -637,9 +641,10 @@ function render(){
   }
   if(!all.length&&S.page==="gift"){m.innerHTML=`<div class="grid"><div class="empty"><h2>还没有别人送的东西</h2><p>收到礼物也可以记下来：谁送的、大概值多少，<br>之后打卡、提醒、归档都和「我买的」一样。</p><div class="actions"><button class="btn pink" data-add>＋ 记一件礼物</button></div></div></div>`;return}
   if(!all.length){m.innerHTML=`<div class="grid"><div class="empty"><h2>还没有记录</h2><p>点「＋ 记一件」，填上价格、拍张照片。<br>之后每用一次打一次卡，看它离「1元一次」还有多远。</p><div class="actions"><button class="btn pink" data-add>＋ 记第一件</button><button class="btn" data-importbtn>导入备份</button></div></div></div>`;return}
-  let list=active.slice().sort((a,b)=>{const da=(status(a)||{}).due?1:0,db=(status(b)||{}).due?1:0;return db-da||(b.createdAt||0)-(a.createdAt||0)});
+  const rank=it=>{const st=status(it);return st&&st.due?(st.day?0:1):2};
+  let list=active.slice().sort((a,b)=>rank(a)-rank(b)||(b.createdAt||0)-(a.createdAt||0));
   if(S.filter!=="all")list=list.filter(i=>kindOf(i)===S.filter);
-  m.innerHTML=`<div class="grid">${list.length?list.map(card).join(""):`<div class="empty"><p>这一类没有正在用的东西。</p></div>`}</div>`;
+  m.innerHTML=`<div class="grid">${list.length?list.map((it,i)=>card(it,i+1)).join(""):`<div class="empty"><p>这一类没有正在用的东西。</p></div>`}</div>`;
 }
 function renderTodo(active){
   const sch=active.filter(scheduled),el=$("#todo");
@@ -665,11 +670,11 @@ function milestoneStrip(it){
     if(!hit&&!nextSet){nextSet=true;cls="nx";em=`还差 ${n-c} 次`}
     return`<div class="m3 ${cls}"><span>${money2(t)}/次</span><b>${n}次</b><em>${em}</em></div>`}).join("")}</div>`;
 }
-function card(it){
+function card(it,no){
   const c=count(it),src=imgSrc(it),k=kindOf(it),s=status(it);
   const head=`<button class="hit" data-open="${esc(it.id)}" aria-label="查看 ${esc(it.name)}">
       <div class="thumb${src?"":" noimg"}">${src?`<img src="${esc(src)}" alt="" loading="lazy">`:`<span class="glyph">${glyph(it)}</span>`}
-        <div class="chips">${s&&s.due?`<span class="chip due">${s.day?"今天要打卡":s.pn+"还差"+s.remaining+"次"}</span>`:""}<span class="chip">${tagLabel(it)}</span>${it.example?'<span class="chip ex">示例</span>':""}</div></div>
+        <div class="chips">${no?`<span class="chip no">${no}</span>`:""}${s&&s.due?`<span class="chip due">${s.day?(s.need>1?`今天还差${s.rem}次`:"今天要打卡"):s.pn+"还差"+s.remaining+"次"}</span>`:""}<span class="chip">${tagLabel(it)}</span>${it.example?'<span class="chip ex">示例</span>':""}</div></div>
       <div class="body"><div class="name">${esc(it.name)}</div>
         <div class="meta"><span class="num">${money(it.price)}</span>${metaBits(it)}${it.rating?`<span class="rate ${it.rating}">${RATES[it.rating]}</span>`:""}</div>${it.status==="active"?expBox(it):""}</div>
     </button><div class="perf" aria-hidden="true"></div>`;
@@ -678,7 +683,7 @@ function card(it){
     const a=avgOf(it),nm=nextMile(it);
     let line,label="打卡 · 用了一次",soft=false;
     if(s&&s.day){line=`连续 ${s.cur} ${s.unit} · 最长 ${s.best} ${s.unit}`;
-      if(s.doneToday){label="今天打过啦 · 再打一次";soft=true}else if(s.dueToday)label="今天要打卡！";else{label="打卡 · 今天不用也可以";soft=true}}
+      if(s.doneToday){label="今天打过啦 · 再打一次";soft=true}else if(s.dueToday)label=s.need>1?(s.have?`今天还差 ${s.rem} 次 · 打卡`:`今天要打 ${s.need} 次！`):"今天要打卡！";else{label="打卡 · 今天不用也可以";soft=true}}
     else if(s){line=`${s.pn} ${s.have}/${s.target} 次 · 连续 ${s.cur} ${s.unit}`;
       if(s.remaining>0)label=`打卡 · ${s.pn}还差 ${s.remaining} 次`;else{label=`${s.pn}已完成 · 再打一次`;soft=true}}
     else line=nm?`再用 ${nm.left} 次 → ${money2(nm.t)}/次`:`已经低于 ${money2(0.1)}/次 啦`;
@@ -751,7 +756,7 @@ function endPanel(it){
 function calendar(it,s){
   if(s.day){
     const t=s.today,start=t-(wdOf(t)-1)-21,cells=WD.map(w=>`<span class="h">${w}</span>`);
-    for(let d=start;d<start+28;d++){const dt=idxDate(d);const cls=[d>t?"fut":"",s.isS(d)?"s":"",s.days.has(d)?"on":"",d===t?"today":""].join(" ");
+    for(let d=start;d<start+28;d++){const dt=idxDate(d);const cls=[d>t?"fut":"",s.isS(d)||s.part(d)?"s":"",s.done(d)?"on":"",d===t?"today":""].join(" ");
       cells.push(`<i class="${cls}" title="${dayKey(dt)}">${dt.getDate()}</i>`)}
     return`<div class="sec"><h4>最近 4 周 · 实线圈 = 要打卡的日子，填色 = 打过</h4><div class="cal">${cells.join("")}</div></div>`;
   }
@@ -768,7 +773,7 @@ function renderDetail(){
   if(tracked(it)){
     kv=`<div><b>${money(it.price)}</b><span>总价</span></div><div><b>${c}</b><span>使用次数</span></div><div><b>${a===null?"—":money2(a)}</b><span>每次均价</span></div>`;
     main=`<div class="sec"><h4>回本里程碑</h4>${milestoneStrip(it)}</div>`;
-    if(s){main+=`<div class="kv"><div><b>${s.cur}</b><span>当前连续（${s.unit}）</span></div><div><b>${s.best}</b><span>最长连续</span></div><div><b>${s.day?(s.doneToday?"✓":s.dueToday?"待打":"休息"):`${s.have}/${s.target}`}</b><span>${s.day?"今天":s.pn}</span></div></div>${calendar(it,s)}`}
+    if(s){main+=`<div class="kv"><div><b>${s.cur}</b><span>当前连续（${s.unit}）</span></div><div><b>${s.best}</b><span>最长连续</span></div><div><b>${s.day?(s.need>1?`${s.have}/${s.need}`:(s.doneToday?"✓":s.dueToday?"待打":"休息")):`${s.have}/${s.target}`}</b><span>${s.day?"今天":s.pn}</span></div></div>${calendar(it,s)}`}
   }else if(it.cost==="time"){
     const dd=tDays(it);
     kv=`<div><b>${money(it.price)}</b><span>${it.gift?"价值":"总价"}</span></div><div><b>${dd}</b><span>${archived?"一共用了几天":"已用天数（自动）"}</span></div><div><b>${money2(it.price/dd)}</b><span>每天均价</span></div>`;
@@ -882,15 +887,15 @@ const form=$("#itemForm");
 const val=n=>{const r=form.querySelector(`input[name="${n}"]:checked`);return r?r.value:""};
 function setRadio(name,v){const r=form.querySelector(`input[name="${name}"][value="${v}"]`);if(r)r.checked=true}
 function formItem(){
-  const need=val("need");let cost=val("cost"),sched,monthEvery=1,monthTimes=1,weekDays=[];
+  const need=val("need");let cost=val("cost"),sched,monthEvery=1,monthTimes=1,weekDays=[],dayTimes=1;
   if(need==="time")return{cost:"time",sched:"none",weekDays,monthEvery,monthTimes};
   if(need==="free")sched=cost==="finish"&&val("ftrack")==="none"?"none":"free";
   else{const f=val("freq");
-    if(f==="day")sched="day";
+    if(f==="day"){sched="day";dayTimes=clamp(parseInt($("#f-dt").value)||1,1,20)}
     else if(f==="week"){sched="week";weekDays=[...form.querySelectorAll('input[name="wd"]:checked')].map(x=>+x.value)}
     else if(f==="month"){sched="month";monthTimes=clamp(parseInt($("#f-mt").value)||1,1,31)}
     else{sched="month";monthEvery=clamp(parseInt($("#f-ce").value)||1,1,12);monthTimes=clamp(parseInt($("#f-ct").value)||1,1,60)}}
-  return{cost,sched,weekDays,monthEvery,monthTimes};
+  return{cost,sched,weekDays,monthEvery,monthTimes,dayTimes};
 }
 function syncForm(){
   const need=val("need"),cost=val("cost"),gift=$("#f-gift").checked;
@@ -899,12 +904,12 @@ function syncForm(){
   $("#qS").hidden=need!=="sched";
   $("#giverWrap").hidden=!gift;$("#placeWrap").hidden=gift;$("#srcWrap").hidden=gift;
   $("#lblPrice").textContent=gift?"价值（估个大概）":"总价";$("#lblDate").textContent=gift?"收到日期（选填）":"购买日期（选填）";
-  const f=val("freq");$("#wdRow").hidden=f!=="week";$("#mRow").hidden=f!=="month";$("#cRow").hidden=f!=="custom";
+  const f=val("freq");$("#dRow").hidden=f!=="day";$("#wdRow").hidden=f!=="week";$("#mRow").hidden=f!=="month";$("#cRow").hidden=f!=="custom";
   const p=norm(formItem()),k=kindOf(p);
   const kp=$("#kindPrev");kp.className="kindprev k-"+k;
   kp.innerHTML=`<i></i><span>这件会是 <b>${tagLabel(p)}</b>${scheduled(p)?"，到时间没打卡会提醒你":p.cost==="time"?"，每天自动累计，不用打卡":""}</span>`;
 }
-form.addEventListener("change",syncForm);form.addEventListener("input",e=>{if(["f-mt","f-ce","f-ct"].includes(e.target.id))syncForm()});
+form.addEventListener("change",syncForm);form.addEventListener("input",e=>{if(["f-mt","f-ce","f-ct","f-dt"].includes(e.target.id))syncForm()});
 function chipList(preset,field){
   const seen=new Set(preset),extra=[];
   S.items.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).forEach(i=>{const v=(i[field]||"").trim();if(v&&!seen.has(v)){seen.add(v);extra.push(v)}});
@@ -980,7 +985,7 @@ function openForm(it){
   $("#f-gift").checked=it?!!it.gift:S.page==="gift";$("#f-giver").value=it?it.giver||"":"";$("#f-note").value=it?it.note||"":"";
   if(it){
     if(it.cost!=="time")setRadio("cost",it.cost);setRadio("need",it.cost==="time"?"time":scheduled(it)?"sched":"free");setRadio("ftrack",it.sched==="none"?"none":"free");
-    if(it.sched==="day")setRadio("freq","day");
+    if(it.sched==="day"){setRadio("freq","day");$("#f-dt").value=it.dayTimes}
     else if(it.sched==="week"){setRadio("freq","week");form.querySelectorAll('input[name="wd"]').forEach(x=>x.checked=it.weekDays.includes(+x.value))}
     else if(it.sched==="month"){if(it.monthEvery>1){setRadio("freq","custom");$("#f-ce").value=it.monthEvery;$("#f-ct").value=it.monthTimes}else{setRadio("freq","month");$("#f-mt").value=it.monthTimes}}
   }
@@ -1124,5 +1129,6 @@ async function doImport(){
 render();
 })();
 </script>
+
 </body>
 </html>
