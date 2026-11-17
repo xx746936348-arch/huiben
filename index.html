@@ -740,6 +740,9 @@ function endPanel(it){
     return`<div class="panel plain"><div><b>「${esc(it.name)}」用完啦？</b></div><div>${stat}。确认后会移到归档。</div>
       <div class="actions"><button class="btn small" data-panelno>还没</button><button class="btn small pink" data-endyes="finished">确认用完</button></div></div>`;
   }
+  if(p==="scrap"&&it.cost==="finish")return`<div class="panel bad"><div>「${esc(it.name)}」还没用完就报废，按总价值算亏损${count(it)?`（之前用了 ${count(it)} 次）`:""}。</div>
+      <div>报废亏损</div><div class="big">${money2(it.price)}</div>
+      <div class="actions"><button class="btn small" data-panelno>再用用</button><button class="btn small dangerfill" data-endyes="scrapped">确认报废</button></div></div>`;
   if(p==="scrap"){
     const c=count(it),n1=needFor(it.price,1),loss=lossNow(it);
     if(loss<=0)return`<div class="panel good"><div class="bigok">已经回本啦 ✓</div><div>用了 ${c} 次，均价 ${c?money2(it.price/c):"—"}/次，已经到 ${money2(1)}/次 以下，报废不亏。</div>
@@ -816,7 +819,7 @@ function renderDetail(){
       <button class="btn small danger" data-panel="delete">删除</button>
       ${archived?`<button class="btn small" data-restore>${it.cost==="time"?"撤回截止":"恢复为使用中"}</button>`:`
         <button class="btn small" data-edit>编辑</button>
-        ${tracked(it)?`<button class="btn small" data-panel="scrap">报废</button>`:""}
+        ${tracked(it)||it.cost==="finish"?`<button class="btn small" data-panel="scrap">报废</button>`:""}
         ${it.cost==="finish"?`<button class="btn small" data-panel="finish">用完啦</button>`:""}
         ${it.cost==="time"?`<button class="btn small pink" data-panel="stop">截止使用</button>`:""}
         ${tracked(it)?`<button class="btn small pink" data-punch="${esc(it.id)}">打卡</button>`:""}`}
@@ -879,7 +882,7 @@ document.addEventListener("click",async e=>{
   if(b.hasAttribute("data-backfill")){const v=$("#backDate").value;if(!v)return;const t=new Date(v+"T12:00:00").getTime();
     if(t>Date.now()){toast("不能补未来的日期");return}await punch(it.id,t);return}
   if(ds.endyes){
-    let extra={},loss=ds.endyes==="scrapped"?lossNow(it):0,msg;
+    let extra={},loss=ds.endyes==="scrapped"?(it.cost==="finish"?it.price:lossNow(it)):0,msg;
     if(it.cost==="time"){const el=$("#stopDate");const end=new Date((el&&el.value||dayKey(Date.now()))+"T12:00:00").getTime();
       extra.endAt=end;const d=daysOwned(it,end);loss=ds.endyes==="scrapped"?Math.max(0,Math.round((it.price-d)*100)/100):0;
       msg=ds.endyes==="done"?`完成啦！用了 ${d} 天，已移到归档`:`已截止，亏损 ${money2(loss)}，移到归档`}
