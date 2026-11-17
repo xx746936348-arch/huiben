@@ -155,6 +155,9 @@ select.cur{border:1.5px solid var(--line);background:var(--paper);border-radius:
 .cntt{font-size:12.5px;color:var(--muted);text-align:right}
 .cntt b{font-family:var(--f-num);color:var(--ink);font-size:15px}
 .next{font-size:12.5px;color:var(--muted)}
+.last{display:flex;align-items:baseline;gap:8px;font-size:12.5px;color:var(--muted);background:var(--bg);border-radius:10px;padding:5px 10px;flex-wrap:wrap}
+.last b{font-family:var(--f-num);font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.last em{font-style:normal;margin-left:auto;color:var(--k);font-weight:700}
 .bar{height:8px;background:var(--ks);border-radius:8px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--k);border-radius:8px}
 
@@ -670,6 +673,12 @@ function milestoneStrip(it){
     if(!hit&&!nextSet){nextSet=true;cls="nx";em=`还差 ${n-c} 次`}
     return`<div class="m3 ${cls}"><span>${money2(t)}/次</span><b>${n}次</b><em>${em}</em></div>`}).join("")}</div>`;
 }
+function lastLine(it){
+  if(!it.checkins.length)return`<div class="last"><span>上次打卡</span><b>还没打过卡</b></div>`;
+  const t=Math.max(...it.checkins),n=dayIdx(Date.now())-dayIdx(t);
+  const rel=n<=0?"今天":n===1?"昨天":`${n} 天前`;
+  return`<div class="last"><span>上次打卡</span><b>${fmtFull(t)}</b><em>${rel}</em></div>`;
+}
 function card(it,no){
   const c=count(it),src=imgSrc(it),k=kindOf(it),s=status(it);
   const head=`<button class="hit" data-open="${esc(it.id)}" aria-label="查看 ${esc(it.name)}">
@@ -689,6 +698,7 @@ function card(it,no){
     else line=nm?`再用 ${nm.left} 次 → ${money2(nm.t)}/次`:`已经低于 ${money2(0.1)}/次 啦`;
     const bar=nm?Math.min(100,c/nm.n*100):100;
     stub=`<div class="avgrow"><div class="avg">${a===null?"—":money2(a)}<small>/次</small></div><div class="cntt">已用 <b>${c}</b> 次</div></div>
+      ${lastLine(it)}
       ${milestoneStrip(it)}
       <div class="next">${line}</div><div class="bar"><i style="width:${bar.toFixed(1)}%"></i></div>
       <button class="punch${soft?" soft":""}" data-punch="${esc(it.id)}">${label}</button>`;
