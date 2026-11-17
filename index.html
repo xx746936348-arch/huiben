@@ -78,6 +78,7 @@ header.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-
 .seal{width:52px;height:52px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--f-display);font-size:20px;transform:rotate(-10deg);box-shadow:inset 0 0 0 3px var(--paper),0 0 0 2px var(--accent);flex:none}
 h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,6vw,38px);line-height:1;margin:0}
 h1 small{display:block;font-family:var(--f-body);font-size:12.5px;color:var(--muted);margin-top:6px}
+h1 small.ver{margin-top:3px;font-size:11.5px;font-family:var(--f-num)}
 .top-actions{display:flex;gap:8px;align-items:center}
 .btn{border:1.5px solid var(--line);background:var(--paper);border-radius:999px;padding:9px 16px;font-weight:500;transition:transform .1s}
 .btn:active{transform:scale(.97)}
@@ -298,7 +299,7 @@ label.fld input,label.fld textarea,.dlg textarea{border:1.5px solid var(--line);
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="brand"><div class="seal" aria-hidden="true">回本</div><h1>回本打卡簿<small>每用一次，就更值一点</small></h1></div>
+    <div class="brand"><div class="seal" aria-hidden="true">回本</div><h1>回本打卡簿<small>每用一次，就更值一点</small><small class="ver">App 更新于 2026/11/17 15:28</small></h1></div>
     <div class="top-actions">
       <button class="btn pink" id="addBtn">＋ 记一件</button>
     </div>
@@ -709,16 +710,15 @@ function card(it,no){
       <div class="next">${nx?`自动计时中，再过 ${nx-d} 天降到 ${money2(it.price/nx)}/天`:`已经低于 ${money2(0.1)}/天 啦`}</div><div class="bar"><i style="width:${Math.min(100,d/(nx||d)*100).toFixed(1)}%"></i></div>
       <button class="punch alt" data-stopcard="${esc(it.id)}">${d>=n1?"已回本 · 不用了点这里":"不用了 · 截止"}</button>`;
   }else{
-    const d=daysOwned(it);
-    stub=`<div class="avgrow"><div class="avg">${money2(it.price/d)}<small>/天</small></div><div class="cntt">已拥有 <b>${d}</b> 天</div></div>
-      <div class="next">不用打卡，用完了点下面就会归档。</div>
+    stub=`<div class="avgrow"><div class="avg">${money(it.price)}<small>总价</small></div><div class="cntt">用完即止 · 不打卡</div></div>
+      <div class="next">用完了点下面就会归档；没用完不要了，点开详情可以报废。</div>
       <button class="punch alt" data-endcard="${esc(it.id)}">用完啦</button>`;
   }
   return`<article class="card k-${k}" data-id="${esc(it.id)}">${head}<div class="stub">${stub}</div><div class="stampfx" aria-hidden="true">已打卡</div></article>`;
 }
 function arcCard(it){
   const src=imgSrc(it),c=count(it),d=daysOwned(it,it.endAt||it.archivedAt);
-  const stat=tracked(it)?`${money(it.price)} · 用了 ${c} 次 · ${c?money2(it.price/c):"—"}/次`:`${money(it.price)} · 用了 ${d} 天 · ${money2(it.price/d)}/天`;
+  const stat=tracked(it)?`${money(it.price)} · 用了 ${c} 次 · ${c?money2(it.price/c):"—"}/次`:(it.cost==="time"?`${money(it.price)} · 用了 ${d} 天 · ${money2(it.price/d)}/天`:`${money(it.price)} · 不打卡`);
   return`<article class="arc k-${kindOf(it)}"><button class="hit" data-open="${esc(it.id)}" aria-label="查看 ${esc(it.name)}">
     <div class="pic">${src?`<img src="${esc(src)}" alt="" loading="lazy">`:`<span class="glyph">${glyph(it)}</span>`}</div>
     <div class="info"><div class="name" style="font-size:15px">${esc(it.name)}${it.example?' <span class="chip ex">示例</span>':""}</div>${outcome(it)}
@@ -736,7 +736,7 @@ function endPanel(it){
   const p=S.panel;
   if(p==="finish"){
     const c=count(it),d=daysOwned(it);
-    const stat=tracked(it)?`一共用了 ${c} 次，${c?`均价 ${money2(it.price/c)}/次`:"还没打过卡"}`:`用了 ${d} 天，折合 ${money2(it.price/d)}/天`;
+    const stat=tracked(it)?`一共用了 ${c} 次，${c?`均价 ${money2(it.price/c)}/次`:"还没打过卡"}`:`总价 ${money2(it.price)}`;
     return`<div class="panel plain"><div><b>「${esc(it.name)}」用完啦？</b></div><div>${stat}。确认后会移到归档。</div>
       <div class="actions"><button class="btn small" data-panelno>还没</button><button class="btn small pink" data-endyes="finished">确认用完</button></div></div>`;
   }
@@ -792,8 +792,7 @@ function renderDetail(){
     kv=`<div><b>${money(it.price)}</b><span>${it.gift?"价值":"总价"}</span></div><div><b>${dd}</b><span>${archived?"一共用了几天":"已用天数（自动）"}</span></div><div><b>${money2(it.price/dd)}</b><span>每天均价</span></div>`;
     main=`<div class="sec"><h4>回本里程碑 · 按天</h4>${dayStrip(it)}</div>`;
   }else{
-    const dd=daysOwned(it,archived?it.archivedAt:null);
-    kv=`<div><b>${money(it.price)}</b><span>总价</span></div><div><b>${dd}</b><span>${archived?"用了几天":"已拥有天数"}</span></div><div><b>${money2(it.price/dd)}</b><span>折合每天</span></div>`;
+    kv=`<div><b>${money(it.price)}</b><span>${it.gift?"价值":"总价"}</span></div><div><b style="font-size:15px;overflow-wrap:anywhere">${it.boughtAt?fmtShort(it.boughtAt):"—"}</b><span>${it.gift?"收到日期":"购买日期"}</span></div><div><b>${archived?(it.endType==="scrapped"?"报废":"用完啦"):"使用中"}</b><span>状态</span></div>`;
   }
   const r=it.rating||"",draft=S.drafts[it.id]??it.review??"";
   const hist=it.checkins.map((t,i)=>({t,i})).sort((x,y)=>y.t-x.t);
